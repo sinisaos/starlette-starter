@@ -54,6 +54,9 @@ async def register(request):
             response.set_cookie(
                 "jwt", generate_jwt(user_results["username"]), httponly=True
             )
+            response.set_cookie(
+                "admin", ADMIN, httponly=True
+            )
         return response
     return templates.TemplateResponse(
         "accounts/register.html", {"request": request, "form": form}
@@ -93,6 +96,9 @@ async def login(request):
             response = RedirectResponse(url="/", status_code=302)
             response.set_cookie(
                 "jwt", generate_jwt(results["username"]), httponly=True
+            )
+            response.set_cookie(
+                "admin", ADMIN, httponly=True
             )
             return response
         except TypeError:

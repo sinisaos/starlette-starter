@@ -18,8 +18,7 @@ from starlette.authentication import (
 )
 from settings import SECRET_KEY, DB_URI
 
-# change this line to set another user as admin user and than change
-# line 47 in base.html
+# change this line to set another user as admin user
 ADMIN = "admin"
 
 engine = create_engine(DB_URI)
