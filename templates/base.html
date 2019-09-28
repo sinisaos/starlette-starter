@@ -44,7 +44,7 @@
           <a class="nav-link dropdown-toggle" href="#" id="dropdown01" data-toggle="dropdown" aria-haspopup="true"
             aria-expanded="false">Hello {{ request.session["user"] }}</a>
           <div class="dropdown-menu" aria-labelledby="dropdown01">
-            {% if request.user.is_authenticated and request.user.username == 'admin' %}
+            {% if request.user.is_authenticated and request.user.username == request.cookies["admin"] %}
             <a class="dropdown-item" href="{{ url_for('dashboard') }}">Dashboard</a>
             {% else %}
             <a class="dropdown-item" href="{{ url_for('profile') }}">Profile</a>

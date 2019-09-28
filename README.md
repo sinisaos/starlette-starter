@@ -20,5 +20,5 @@ cd src
 python app.py
 
 ```
-Change line 22 in tables.py and change line 47 in base.html to set register user as admin user.
+Change line 22 in tables.py to set register user as admin user.
 
