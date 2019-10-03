@@ -3,15 +3,29 @@ from starlette.applications import Starlette
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.staticfiles import StaticFiles
+from secure import SecureHeaders
 from settings import SECRET_KEY, database, templates
 from tables import UserAuthentication
 from accounts.routes import routes
+
+# Security Headers are HTTP response headers that, when set,
+# can enhance the security of your web application
+# by enabling browser security policies.
+# more on https://secure.readthedocs.io/en/latest/headers.html
+secure_headers = SecureHeaders()
 
 app = Starlette(debug=True)
 app.mount("/static", StaticFiles(directory="../static"), name="static")
 app.mount("/accounts", routes)
 app.add_middleware(AuthenticationMiddleware, backend=UserAuthentication())
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
+
+# middleware for secure headers
+@app.middleware("http")
+async def set_secure_headers(request, call_next):
+    response = await call_next(request)
+    secure_headers.starlette(response)
+    return response
 
 
 @app.route('/', methods=["GET"])

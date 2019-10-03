@@ -32,7 +32,7 @@
       <ul class="navbar-nav mr-auto">
       </ul>
       <ul class="navbar-nav">
-        {% if not request.session["user"] %}
+        {% if not request.user.username %}
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('login') }}">Login</a>
         </li>
@@ -42,7 +42,7 @@
         {% else %}
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="dropdown01" data-toggle="dropdown" aria-haspopup="true"
-            aria-expanded="false">Hello {{ request.session["user"] }}</a>
+            aria-expanded="false">Hello {{ request.user.username }}</a>
           <div class="dropdown-menu" aria-labelledby="dropdown01">
             {% if request.user.is_authenticated and request.user.username == request.cookies["admin"] %}
             <a class="dropdown-item" href="{{ url_for('dashboard') }}">Dashboard</a>

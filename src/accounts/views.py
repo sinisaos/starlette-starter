@@ -114,7 +114,7 @@ async def login(request):
                                       })
 
 
-@requires(["authenticated", ADMIN])
+@requires(["authenticated", ADMIN], redirect="index")
 async def dashboard(request):
     if request.user.is_authenticated:
         auth_user = request.user.display_name
@@ -130,7 +130,7 @@ async def dashboard(request):
         )
 
 
-@requires(["authenticated"])
+@requires("authenticated", redirect="index")
 async def profile(request):
     if request.user.is_authenticated:
         auth_user = request.user.display_name
