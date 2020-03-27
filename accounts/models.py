@@ -1,45 +1,30 @@
 import bcrypt
 import jwt
-from sqlalchemy import (
-    MetaData,
-    Table,
-    Column,
-    Integer,
-    String,
-    DateTime,
-    create_engine,
-)
-from datetime import datetime
+from tortoise.models import Model
+from tortoise import fields
 from starlette.authentication import (
     AuthenticationBackend,
     AuthenticationError,
     SimpleUser,
     AuthCredentials,
 )
-from settings import SECRET_KEY, DB_URI
+from settings import SECRET_KEY
 
 # change this line to set another user as admin user
 ADMIN = "admin"
 
-engine = create_engine(DB_URI)
 
-metadata = MetaData()
+class User(Model):
+    id = fields.IntField(pk=True)
+    username = fields.CharField(max_length=255)
+    email = fields.CharField(max_length=255)
+    joined = fields.DatetimeField(auto_now_add=True)
+    last_login = fields.DatetimeField(auto_now=True)
+    login_count = fields.IntField()
+    password = fields.CharField(max_length=255)
 
-users = Table(
-    "users",
-    metadata,
-    Column("id", Integer(), primary_key=True),
-    Column("username", String(100), nullable=False),
-    Column("email", String(100), nullable=False),
-    Column("joined", DateTime(), default=datetime.now()),
-    Column("last_login", DateTime(), default=datetime.now()),
-    Column("login_count", Integer(), nullable=False),
-    Column("password", String(100), nullable=False),
-)
-
-# add another tables here
-
-metadata.create_all(engine)
+    def __str__(self):
+        return self.username
 
 
 class UserAuthentication(AuthenticationBackend):

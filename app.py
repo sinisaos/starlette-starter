@@ -1,12 +1,14 @@
-import uvicorn
 from starlette.applications import Starlette
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.authentication import AuthenticationMiddleware
-from starlette.staticfiles import StaticFiles
 from secure import SecureHeaders
-from settings import SECRET_KEY, database, templates
-from tables import UserAuthentication
-from accounts.routes import routes
+from starlette.staticfiles import StaticFiles
+from starlette.routing import Route
+from tortoise.contrib.starlette import register_tortoise
+from settings import templates, DB_URI, SECRET_KEY
+from accounts.models import UserAuthentication
+from accounts.routes import accounts_routes
+
 
 # Security Headers are HTTP response headers that, when set,
 # can enhance the security of your web application
@@ -14,9 +16,25 @@ from accounts.routes import routes
 # more on https://secure.readthedocs.io/en/latest/headers.html
 secure_headers = SecureHeaders()
 
-app = Starlette(debug=True)
-app.mount("/static", StaticFiles(directory="../static"), name="static")
-app.mount("/accounts", routes)
+
+async def index(request):
+    results = "Home page"
+    return templates.TemplateResponse(
+        "index.html", {
+            "request": request,
+            "results": results
+        }
+    )
+
+
+routes = [
+    Route("/", index),
+]
+
+
+app = Starlette(debug=True, routes=routes)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/accounts", accounts_routes)
 app.add_middleware(AuthenticationMiddleware, backend=UserAuthentication())
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 
@@ -26,24 +44,6 @@ async def set_secure_headers(request, call_next):
     response = await call_next(request)
     secure_headers.starlette(response)
     return response
-
-
-@app.route('/', methods=["GET"])
-async def index(request):
-    results = "Home page"
-    return templates.TemplateResponse(
-        "index.html", {"request": request, "results": results}
-    )
-
-
-@app.on_event("startup")
-async def startup():
-    await database.connect()
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
 
 
 @app.exception_handler(404)
@@ -66,5 +66,8 @@ async def server_error(request, exc):
     return templates.TemplateResponse(template, context, status_code=500)
 
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+register_tortoise(
+    app, db_url=DB_URI,
+    modules={"models": ["accounts.models"]},
+    generate_schemas=True
+)

@@ -1,14 +1,15 @@
 import datetime
-from settings import database, templates
+from settings import templates, BASE_HOST
 from starlette.responses import RedirectResponse
 from starlette.authentication import requires
+from utils import pagination
 from accounts.forms import RegistrationForm, LoginForm
-from tables import (
-    users,
+from accounts.models import (
+    User,
     check_password,
     generate_jwt,
     hash_password,
-    ADMIN
+    ADMIN,
 )
 
 
@@ -16,8 +17,7 @@ async def register(request):
     """
     Validate form, register and authenticate user with JWT token
     """
-    query = users.select().order_by(users.c.id.desc())
-    results = await database.fetch_all(query=query)
+    results = await User.all()
     data = await request.form()
     form = RegistrationForm(data)
     username = form.username.data
@@ -25,7 +25,7 @@ async def register(request):
     password = form.password.data
     if request.method == "POST" and form.validate():
         for result in results:
-            if email == result["email"] or username == result["username"]:
+            if email == result.email or username == result.username:
                 user_error = "User with that email or username already exists."
                 return templates.TemplateResponse(
                     "accounts/register.html",
@@ -35,7 +35,7 @@ async def register(request):
                         "user_error": user_error
                     },
                 )
-        query = users.insert().values(
+        query = User(
             username=username,
             email=email,
             joined=datetime.datetime.now(),
@@ -43,23 +43,25 @@ async def register(request):
             login_count=1,
             password=hash_password(password),
         )
-        await database.execute(query)
-        user_query = users.select().where(users.c.username == username)
-        user_results = await database.fetch_one(user_query)
-        hashed_password = user_results["password"]
+        await query.save()
+        user_query = await User.get(
+            username=username)
+        hashed_password = user_query.password
         valid_password = check_password(password, hashed_password)
-        request.session["user"] = user_results["username"].capitalize()
         response = RedirectResponse(url="/", status_code=302)
         if valid_password:
             response.set_cookie(
-                "jwt", generate_jwt(user_results["username"]), httponly=True
+                "jwt", generate_jwt(user_query.username), httponly=True
             )
             response.set_cookie(
                 "admin", ADMIN, httponly=True
             )
         return response
     return templates.TemplateResponse(
-        "accounts/register.html", {"request": request, "form": form}
+        "accounts/register.html", {
+            "request": request,
+            "form": form
+        }
     )
 
 
@@ -67,82 +69,112 @@ async def login(request):
     """
     Validate form, login and authenticate user with JWT token
     """
+    path = request.query_params['next']
     data = await request.form()
     form = LoginForm(data)
     username = form.username.data
     password = form.password.data
     if request.method == "POST" and form.validate():
         try:
-            query = users.select().where(users.c.username == username)
-            results = await database.fetch_one(query)
-            hashed_password = results["password"]
+            results = await User.get(
+                username=username)
+            hashed_password = results.password
             valid_password = check_password(password, hashed_password)
             if not valid_password:
                 user_error = "Invalid username or password"
                 return templates.TemplateResponse(
                     "accounts/login.html",
                     {
-                        "request": request, "form": form,
+                        "request": request,
+                        "form": form,
                         "user_error": user_error
                     },
                 )
-            request.session["user"] = results["username"].capitalize()
             # update login counter and login time
-            update_query = users.update(users.c.username == username).values(
-                login_count=users.c.login_count + 1,
-                last_login=datetime.datetime.now()
-            )
-            await database.execute(update_query)
-            response = RedirectResponse(url="/", status_code=302)
+            results.login_count += 1
+            results.last_login = datetime.datetime.now()
+            await results.save()
+            response = RedirectResponse(BASE_HOST + path, status_code=302)
             response.set_cookie(
-                "jwt", generate_jwt(results["username"]), httponly=True
+                "jwt", generate_jwt(results.username), httponly=True
             )
             response.set_cookie(
                 "admin", ADMIN, httponly=True
             )
             return response
-        except TypeError:
+        except:  # noqa
             user_error = "Please register you don't have account"
             return templates.TemplateResponse(
                 "accounts/login.html",
-                {"request": request, "form": form, "user_error": user_error},
+                {
+                    "request": request,
+                    "form": form,
+                    "user_error": user_error,
+                },
             )
-    return templates.TemplateResponse("accounts/login.html",
-                                      {
-                                          "request": request,
-                                          "form": form
-                                      })
+    return templates.TemplateResponse("accounts/login.html", {
+        "request": request,
+        "form": form,
+        "path": path
+    })
+
+
+@requires("authenticated")
+async def user_delete(request):
+    """
+    Delete user
+    """
+    id = request.path_params["id"]
+    if request.method == "POST":
+        await User.get(id=id).delete()
+        if request.user.username == ADMIN:
+            return RedirectResponse(url="/accounts/dashboard", status_code=302)
+        request.session.clear()
+        response = RedirectResponse(url="/", status_code=302)
+        response.delete_cookie("jwt")
+        return response
 
 
 @requires(["authenticated", ADMIN], redirect="index")
 async def dashboard(request):
-    if request.user.is_authenticated:
-        auth_user = request.user.display_name
-        query = users.select().order_by(users.c.id.desc())
-        results = await database.fetch_all(query=query)
-        return templates.TemplateResponse(
-            "accounts/dashboard.html",
-            {
-                "request": request,
-                "results": results,
-                "auth_user": auth_user
-            },
-        )
+    auth_user = request.user.display_name
+    page_query = pagination.get_page_number(url=request.url)
+    count = await User.all().count()
+    paginator = pagination.Pagination(page_query, count)
+    results = (
+        await User.all()
+        .limit(paginator.page_size)
+        .offset(paginator.offset())
+    )
+    page_controls = pagination.get_page_controls(
+        url=request.url,
+        current_page=paginator.current_page(),
+        total_pages=paginator.total_pages()
+    )
+    return templates.TemplateResponse(
+        "accounts/dashboard.html",
+        {
+            "request": request,
+            "results": results,
+            "auth_user": auth_user,
+            "page_controls": page_controls,
+            "count": count
+        },
+    )
 
 
 @requires("authenticated", redirect="index")
 async def profile(request):
     if request.user.is_authenticated:
         auth_user = request.user.display_name
-        query = users.select().where(users.c.username == auth_user)
-        results = await database.fetch_one(query)
+        results = await User.get(username=auth_user)
         return templates.TemplateResponse(
             "accounts/profile.html",
             {
                 "request": request,
                 "results": results,
-                "auth_user": auth_user
-            },
+                "auth_user": auth_user,
+            }
         )
 
 

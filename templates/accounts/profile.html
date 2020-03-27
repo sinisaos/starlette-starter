@@ -2,39 +2,44 @@
 
 {% block content %}
 <main role="main">
-    <!-- Main jumbotron for a primary marketing message or call to action -->
-    <div class="jumbotron">
-        <div class="container">
-            <h1 class="display-3">User Profile page</h1>
-        </div>
-    </div>
-
+    <br>
     <div class="container">
-        <div class="col-sm-12">
-            <ul class="list-group">
-
-                <li class="list-group-item text-muted">Profile <i class="fas fa-user"></i></li>
-                <li class="list-group-item text-right"><span class="float-left"><strong>Username</strong></span><span
-                        class="float-right">{{ results.username.capitalize() }}</span>
-                </li>
-                <li class="list-group-item text-right"><span class="float-left"><strong>Email</strong></span><span
-                        class="float-right">{{ results.email }}</span>
-                </li>
-                <li class="list-group-item text-right"><span class="float-left"><strong>Joined</strong></span><span
-                        class="float-right">{{ results.joined.strftime('%d-%m-%Y') }}</span>
-                </li>
-                <li class="list-group-item text-right"><span class="float-left"><strong>Last
-                            login</strong></span><span
-                        class="float-right">{{ results.last_login.strftime('%d-%m-%Y %H:%M:%S')}}</span>
-                </li>
-                <li class="list-group-item text-right"><span class="float-left"><strong>Login
-                            count</strong></span><span class="float-right">{{ results.login_count }}</span>
-                </li>
-            </ul>
+        <div class="row">
+            <div class="col-md-12">
+                <ul class="list-group">
+                    <li class="list-group-item text-muted">Profile <i class="fas fa-user"></i></li>
+                    <li class="list-group-item text-right"><span
+                            class="float-left"><strong>Username</strong></span><span
+                            class="float-right">{{ results.username.capitalize() }}</span>
+                    </li>
+                    <li class="list-group-item text-right"><span class="float-left"><strong>Email</strong></span><span
+                            class="float-right">{{ results.email }}</span>
+                    </li>
+                    <li class="list-group-item text-right"><span class="float-left"><strong>Joined</strong></span><span
+                            class="float-right">{{ results.joined.strftime('%d/%m/%Y') }}</span>
+                    </li>
+                    <li class="list-group-item text-right"><span class="float-left"><strong>Last
+                                login</strong></span><span
+                            class="float-right">{{ results.last_login.strftime('%d/%m/%Y %H:%M:%S')}}</span>
+                    </li>
+                    <li class="list-group-item text-right"><span class="float-left"><strong>Login
+                                count</strong></span><span class="float-right">{{ results.login_count }}</span>
+                    </li>
+                    <li class="list-group-item text-right"><span class="float-right">
+                            <form action="/accounts/user-delete/{{ results.id }}" method="post">
+                                <button class="btn btn-danger float-right"
+                                    onclick="return confirm('Are you sure you want to delete your account? Deleting your account cannot be undone !!!');">
+                                    <i lass="fa fa-trash">
+                                    </i> Delete
+                                    account</button><br>
+                            </form>
+                        </span>
+                    </li>
+                </ul>
+                <br><br>
+            </div>
         </div>
-    </div>
-
-    <hr>
     </div> <!-- /container -->
+    <hr>
 </main>
 {% endblock %}

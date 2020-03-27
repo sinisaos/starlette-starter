@@ -1,4 +1,4 @@
-Example of [Starlette](https://www.starlette.io/) starter aplication with users managment and auth (thanks to [@ceyzaguirre4](https://github.com/ceyzaguirre4))
+Example of [Starlette](https://www.starlette.io/) and [Tortoise ORM](https://tortoise-orm.readthedocs.io/en/latest/)   starter aplication with users managment and auth (thanks to [@ceyzaguirre4](https://github.com/ceyzaguirre4))
 
 Open terminal and run:
 
@@ -9,16 +9,14 @@ source bin/activate
 git clone https://github.com/sinisaos/starlette-starter.git
 cd starlette-starter
 pip install -r requirements.txt
-mysql -u root -p
+mysql -u mysqluser -p
 CREATE DATABASE test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 exit;
 touch .env
 ## put this two line in .env file
-## DB_URI="mysql+pymysql://username:password@localhost/test"
+## DB_URI="mysql://username:password@localhost/test"
 ## SECRET_KEY="secret key"
-cd src
-python app.py
-
+uvicorn app:app --port 8000 --host 0.0.0.0 
 ```
-Change line 22 in tables.py to set register user as admin user.
 
+Change line 22 in accounts models.py to set register user as admin user.
