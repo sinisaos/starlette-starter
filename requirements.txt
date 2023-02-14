@@ -27,7 +27,7 @@ pytz==2019.3
 secure==0.2.1
 six==1.12.0
 sqlparse==0.3.0
-starlette==0.12.9
+starlette==0.25.0
 tortoise-orm==0.15.23
 uvicorn==0.11.7
 uvloop==0.13.0
