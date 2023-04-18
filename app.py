@@ -1,7 +1,7 @@
+import secure
 from starlette.applications import Starlette
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.authentication import AuthenticationMiddleware
-from secure import SecureHeaders
 from starlette.staticfiles import StaticFiles
 from starlette.routing import Route
 from tortoise.contrib.starlette import register_tortoise
@@ -14,16 +14,13 @@ from accounts.routes import accounts_routes
 # can enhance the security of your web application
 # by enabling browser security policies.
 # more on https://secure.readthedocs.io/en/latest/headers.html
-secure_headers = SecureHeaders()
+secure_headers = secure.Secure()
 
 
 async def index(request):
     results = "Home page"
     return templates.TemplateResponse(
-        "index.html", {
-            "request": request,
-            "results": results
-        }
+        "index.html", {"request": request, "results": results}
     )
 
 
@@ -42,7 +39,7 @@ app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
 @app.middleware("http")
 async def set_secure_headers(request, call_next):
     response = await call_next(request)
-    secure_headers.starlette(response)
+    secure_headers.framework.starlette(response)
     return response
 
 
@@ -67,7 +64,8 @@ async def server_error(request, exc):
 
 
 register_tortoise(
-    app, db_url=DB_URI,
+    app,
+    db_url=DB_URI,
     modules={"models": ["accounts.models"]},
-    generate_schemas=True
+    generate_schemas=True,
 )

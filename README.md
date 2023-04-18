@@ -9,13 +9,13 @@ source bin/activate
 git clone https://github.com/sinisaos/starlette-starter.git
 cd starlette-starter
 pip install -r requirements.txt
-mysql -u mysqluser -p
-CREATE DATABASE test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-exit;
+sudo -i -u yourpostgresusername psql
+CREATE DATABASE starter;
+\q
 touch .env
 ## put this two line in .env file
-## DB_URI="mysql://username:password@localhost/test"
-## SECRET_KEY="secret key"
+## DB_URI="postgres://username:password@localhost:5432/starter"
+## SECRET_KEY="your secret key"
 uvicorn app:app --port 8000 --host 0.0.0.0 
 ```
 
